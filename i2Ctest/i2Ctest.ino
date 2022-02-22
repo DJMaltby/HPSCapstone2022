@@ -3,8 +3,8 @@
 #include <Wire.h>
 
 // one of these two (may be) the address for LSM9DS1
-// #define mainAddress 0x3C
-#define mainAddress 0x6B
+#define mainAddress 0x3C                           // this is from running i2c_scanner.ino
+// #define mainAddress 0x6B
 
 // x-axis gyroscope outputs
 #define OUT_X_L_G 0x18
@@ -57,7 +57,7 @@ void loop() {
 
   Wire.endTransmission();
 
-  Wire.requestFrom(mainAddress, 3);
+  Wire.requestFrom(mainAddress, 3);    // 3 or 6 bytes, since doc says this data comes in 16 bits but only writing to three 8-bit registers
 
   Serial.print("bytes read: ");
   Serial.println(Wire.available());
