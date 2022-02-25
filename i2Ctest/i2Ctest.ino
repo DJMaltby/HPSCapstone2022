@@ -3,7 +3,7 @@
 #include <Wire.h>
 
 // one of these two (may be) the address for LSM9DS1
-#define mainAddress 0x3C                           // this is from running i2c_scanner.ino
+#define mainAddress 0x08                                // this is from running i2c_scanner.ino
 // #define mainAddress 0x6B
 
 // x-axis gyroscope outputs
@@ -21,14 +21,16 @@
 // Control register 1 for gyroscope
 #define CTRL_REG1_G 0x10
 
-int gx, gy, gz, ax, ay, az;
+void requestEvent();
+
+int16_t gx, gy, gz;
 
 void setup() {
   Wire.begin();
   Serial.begin(38400);
   delay(100);
 
-  if (!IMU.begin()) {
+/*  if (!IMU.begin()) {
     Serial.println("Failed to initialize IMU!");
     while (1);
   }
@@ -37,8 +39,8 @@ void setup() {
   Serial.println(" Hz");
   Serial.println();
   Serial.println("Gyroscope in degrees/second");
-  Serial.println("X\tY\tZ"); 
-
+  Serial.println("X\tY\tZ"); */
+  
   Wire.beginTransmission(mainAddress);
 
   // 119 Hz, 2000 dps, 16 Hz BW
@@ -57,12 +59,13 @@ void loop() {
 
   Wire.endTransmission();
 
-  Wire.requestFrom(mainAddress, 3);    // 3 or 6 bytes, since doc says this data comes in 16 bits but only writing to three 8-bit registers
+  Wire.requestFrom(mainAddress, 6);    // 3 or 6 bytes, since doc says this data comes in 16 bits but only writing to three 8-bit registers
 
+  
   Serial.print("bytes read: ");
   Serial.println(Wire.available());
 
-  if (3 >= Wire.available()) {
+  if (6 <= Wire.available()) {
     gx = Wire.read();
     gy = Wire.read();
     gz = Wire.read();
@@ -74,5 +77,7 @@ void loop() {
     Serial.print("   gz = ");
     Serial.println(gz);
   }
+
+  delay(1000);
 
 }

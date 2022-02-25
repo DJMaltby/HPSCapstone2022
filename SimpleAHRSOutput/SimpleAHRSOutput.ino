@@ -30,6 +30,9 @@ void setup()
 {
   Serial.begin(38400);
   while (!Serial);
+
+  Serial.println(sizeof(String));
+  
   Serial.println("Waited for Serial.");
   
   // Initialize LED pin
@@ -99,16 +102,18 @@ void loop()
   yaw = IMU.yawDegrees();
   temperature = IMU.readTempC();
 
-  Serial.print(millis());
-  Serial.print(',');
+  // Serial.print(millis());
+  // Serial.print(',');
+  Serial.print("roll: ");
   Serial.print(roll);
-  Serial.print(',');
+  Serial.print(",  pitch:");
   Serial.print(pitch);
-  Serial.print(',');
+  Serial.print(",  yaw:");
   Serial.print(yaw);
-  Serial.print(',');
+  Serial.print(",  temperature:");
   Serial.println(temperature); 
 
   digitalWrite(myLed, !digitalRead(myLed));
+  delay(500);
 
 }
