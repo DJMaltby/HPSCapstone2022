@@ -10,9 +10,9 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  Wire.requestFrom(8, 12);
+  Wire.requestFrom(8, 3);
 
-  if (Wire.available() >= 12) {
+  if (Wire.available() >= 3) {
     roll = Wire.read();
     pitch = Wire.read();
     yaw = Wire.read();
