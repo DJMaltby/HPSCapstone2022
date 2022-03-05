@@ -1,6 +1,17 @@
 #include <Wire.h>
 
-int roll, pitch, yaw;
+union floatToBytes {
+  char byteValue[4];
+  float floatValue;
+  
+} roll, pitch, yaw;
+
+enum {ROLL, PITCH, YAW};
+
+int i;
+int charIndex = 0;
+
+// int roll, pitch, yaw;
 
 void setup() {
   // put your setup code here, to run once:
@@ -10,20 +21,45 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  Wire.requestFrom(8, 3);
+  for (i = ROLL; i > YAW; i++) {
+    Wire.beginTransmission(8);
+    Wire.write(i);
+    Wire.endTransmission();
+    
+    Wire.requestFrom(8, 4);
+    
+    if (i == ROLL) {
+      while (Wire.available()) {
+        roll.byteValue[charIndex] = Wire.read();
+        charIndex++;
+      }
+    }
 
-  if (Wire.available() >= 3) {
-    roll = Wire.read();
-    pitch = Wire.read();
-    yaw = Wire.read();
+    if (i == PITCH) {
+       while (Wire.available()) {
+        pitch.byteValue[charIndex] = Wire.read();
+        charIndex++;
+      } 
+    }
 
-    Serial.print("roll: ");
-    Serial.print(roll);
-    Serial.print(",  pitch:");
-    Serial.print(pitch);
-    Serial.print(",  yaw:");
-    Serial.println(yaw);
+    if (i == YAW) {
+       while (Wire.available()) {
+        yaw.byteValue[charIndex] = Wire.read();
+        charIndex++;
+      } 
+    }
+
+    charIndex = 0;
   }
+  
+  Serial.print("roll: ");
+  Serial.print(roll.floatValue);
+  Serial.print(",  pitch:");
+  Serial.print(pitch.floatValue);
+  Serial.print(",  yaw:");
+  Serial.println(yaw.floatValue);
+
+  i = ROLL;
   
   delay(500);
 }
