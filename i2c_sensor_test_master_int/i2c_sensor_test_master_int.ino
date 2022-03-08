@@ -36,7 +36,7 @@ void setup() {
     Serial.print("gyro sensitivity is "); Serial.print(IMU.gyroscopeSensitivity()); Serial.println(" LSB/mdps");
     Serial.print("mag sensitivity is "); Serial.print(IMU.magnometerSensitivity()); Serial.println(" LSB/mGauss");
 
-    Serial.println("Calibrate gyro and accel");
+    Serial.println("Calibrating gyro and accel");
     IMU.calibrateAccelGyro(); // Calibrate gyro and accelerometers, load biases in bias registers
 
     float* accelBias = IMU.getAccelBias();
@@ -45,6 +45,7 @@ void setup() {
     Serial.println("accel biases (mg)"); Serial.println(1000.*accelBias[0]); Serial.println(1000.*accelBias[1]); Serial.println(1000.*accelBias[2]);
     Serial.println("gyro biases (dps)"); Serial.println(gyroBias[0]); Serial.println(gyroBias[1]); Serial.println(gyroBias[2]);
 
+    Serial.println("Calibrating mag");
     IMU.calibrateMag();
     float* magBias = IMU.getMagBias();
     Serial.println("mag biases (mG)"); Serial.println(1000.*magBias[0]); Serial.println(1000.*magBias[1]); Serial.println(1000.*magBias[2]); 
@@ -56,7 +57,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-    if (IMU.accelerometerReady()) {  // check if new accel data is ready  
+  if (IMU.accelerometerReady()) {  // check if new accel data is ready  
     IMU.readAccel(ax, ay, az);
   } 
 
@@ -77,42 +78,52 @@ void loop() {
 
   roll_m = (int) roll;
   pitch_m = (int) pitch;
-  yaw_m = (int) yaw; 
+  yaw_m = (int) yaw;
+  yaw_m = yaw_m + 120;   // TEMP FIX, YAW OFFSET
   
   Wire.requestFrom(8,3);
 
   if (Wire.available() >= 3) {
     roll_s = Wire.read();
+    if (roll_s > 180) {
+      roll_s = roll_s - 255;  
+    }
     pitch_s = Wire.read();
-    yaw_s = Wire.read();  
+    if (pitch_s > 180) {
+      pitch_s = pitch_s - 255;  
+    }
+    yaw_s = Wire.read();
+    if (yaw_s > 180) {
+      yaw_s = yaw_s - 255;  
+    }
   }
 
-  roll_t = roll_s - roll_m;
-  pitch_t = pitch_s - pitch_m;
-  yaw_t = yaw_s - yaw_m;
+  roll_t = roll_s + roll_m;
+  pitch_t = pitch_s + pitch_m;
+  yaw_t = yaw_s + yaw_m;
 
   Serial.print("roll: ");
-  Serial.print(roll_s);
+/*  Serial.print(roll_s);
   Serial.print(" - ");
   Serial.print(roll_m);
-  Serial.print(" = ");
+  Serial.print(" = "); */
   Serial.print(roll_t);
   
-  Serial.print(",  pitch:");
-  Serial.print(pitch_s);
+  Serial.print(",  pitch: ");
+/*  Serial.print(pitch_s);
   Serial.print(" - ");
   Serial.print(pitch_m);
-  Serial.print(" = ");
+  Serial.print(" = "); */
   Serial.print(pitch_t);
   
-  Serial.print(",  yaw:");
-  Serial.print(yaw_s);
+  Serial.print(",  yaw: ");
+/*  Serial.print(yaw_s);
   Serial.print(" - ");
   Serial.print(yaw_m);
-  Serial.print(" = ");
+  Serial.print(" = "); */
   Serial.println(yaw_t);
 
-  delay(500);
+  delay(50);
 
 /*
   for (i = ROLL; i > YAW; i++) {

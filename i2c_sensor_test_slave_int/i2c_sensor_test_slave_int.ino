@@ -52,7 +52,8 @@ void loop() {
 
   roll_s = (int) roll;
   pitch_s = (int) pitch;
-  yaw_s = (int) yaw; 
+  yaw_s = (int) yaw;  
+  yaw_s = yaw_s + 125;  // TEMP FIX, YAW OFFSET
 }
 
 void requestEvent() {

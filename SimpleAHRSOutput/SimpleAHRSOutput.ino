@@ -114,6 +114,6 @@ void loop()
   Serial.println(temperature); 
 
   digitalWrite(myLed, !digitalRead(myLed));
-  delay(500);
+  // delay(100);
 
 }

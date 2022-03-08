@@ -488,7 +488,7 @@ void AHRS_Nano33BLE_LSM9DS1Class::magcalLSM9DS1(float * dest1)
   writeByte(LSM9DS1M_ADDRESS, LSM9DS1M_CTRL_REG4_M, Mmode << 2 ); // select z-axis mode
   writeByte(LSM9DS1M_ADDRESS, LSM9DS1M_CTRL_REG5_M, 0x40 ); // select block update mode
 
-  Serial.println("Mag Calibration: Wave device in a figure eight until done!");
+  // Serial.println("Mag Calibration: Wave device in a figure eight until done!");
   delay(4000);
 
   sample_count = 128;
