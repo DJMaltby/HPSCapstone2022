@@ -1,10 +1,14 @@
 #include <Wire.h>
 
-#include "AHRS_Nano33BLE_LSM9DS1.h"
+#include <AHRS_Nano33BLE_LSM9DS1.h>
 
 float gx, gy, gz, ax, ay, az, mx, my, mz;
 float pitch, roll, yaw;
 float deltat;
+
+//int gx_s, gy_s, gz_s, ax_s, ay_s, az_s, mx_s, my_s, mz_s;
+int gx_m, gy_m, gz_m, ax_m, ay_m, az_m, mx_m, my_m, mz_m;
+int gx_t, gy_t, gz_t, ax_t, ay_t, az_t, mx_t, my_t, mz_t;
 
 int roll_s, pitch_s, yaw_s;
 int roll_m, pitch_m, yaw_m;
@@ -76,14 +80,37 @@ void loop() {
   pitch = IMU.pitchDegrees();
   yaw = IMU.yawDegrees();
 
+  ax_m = (int) ax;
+  ay_m = (int) ay;
+  az_m = (int) az;
+
+  gx_m = (int) gx;
+  gy_m = (int) gy;
+  gz_m = (int) gz;
+
+  mx_m = (int) mx;
+  my_m = (int) my;
+  mz_m = (int) mz;
+
   roll_m = (int) roll;
   pitch_m = (int) pitch;
   yaw_m = (int) yaw;
-  yaw_m = yaw_m + 120;   // TEMP FIX, YAW OFFSET
   
-  Wire.requestFrom(8,3);
+  Wire.requestFrom(8,12);
 
-  if (Wire.available() >= 3) {
+  if (Wire.available() >= 12) {
+    gx_t = gx_m - Wire.read();
+    gy_t = gy_m - Wire.read();
+    gz_t = gz_m - Wire.read();
+
+    ax_t = ax_m - Wire.read();
+    ay_t = ay_m - Wire.read();
+    az_t = az_m - Wire.read();
+
+    mx_t = mx_m - Wire.read();
+    my_t = my_m - Wire.read();
+    mz_t = mz_m - Wire.read();
+    
     roll_s = Wire.read();
     if (roll_s > 180) {
       roll_s = roll_s - 255;  
@@ -98,10 +125,33 @@ void loop() {
     }
   }
 
-  roll_t = roll_s + roll_m;
-  pitch_t = pitch_s + pitch_m;
-  yaw_t = yaw_s + yaw_m;
+  roll_t = roll_m - roll_s;
+  pitch_t = pitch_m - pitch_s;
+  yaw_t = yaw_m - yaw_s;
 
+  Serial.println();
+
+  Serial.print("roll velocity: ");
+  Serial.print(gx_t);
+  Serial.print(",  pitch velocity: ");
+  Serial.print(gy_t);
+  Serial.print(",  yaw velocity: ");
+  Serial.println(gz_t);
+
+  Serial.print("x-axis acceleration: ");
+  Serial.print(ax_t);
+  Serial.print(",  y-axis acceleration: ");
+  Serial.print(ay_t);
+  Serial.print(",  z-axis acceleration: ");
+  Serial.println(az_t);
+
+  Serial.print("x-axis magnetic field: ");
+  Serial.print(mx_t);
+  Serial.print(",  y-axis magnetic field: ");
+  Serial.print(my_t);
+  Serial.print(",  z-axismagnetic field: ");
+  Serial.println(mz_t);
+  
   Serial.print("roll: ");
 /*  Serial.print(roll_s);
   Serial.print(" - ");

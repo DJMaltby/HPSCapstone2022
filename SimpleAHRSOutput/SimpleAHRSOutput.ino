@@ -14,8 +14,7 @@
   This example code is in the public domain.
 */
 
-// #include <AHRS_Nano33BLE_LSM9DS1.h>
-#include "AHRS_Nano33BLE_LSM9DS1.h"
+#include <AHRS_Nano33BLE_LSM9DS1.h>
 
 // Pin definitions
 int myLed  = 13;
@@ -30,9 +29,6 @@ void setup()
 {
   Serial.begin(38400);
   while (!Serial);
-
-  Serial.println(sizeof(String));
-  
   Serial.println("Waited for Serial.");
   
   // Initialize LED pin
@@ -102,6 +98,29 @@ void loop()
   yaw = IMU.yawDegrees();
   temperature = IMU.readTempC();
 
+  Serial.println();
+
+/*  Serial.print("roll velocity: ");
+  Serial.print(gx);
+  Serial.print(",  pitch velocity: ");
+  Serial.print(gy);
+  Serial.print(",  yaw velocity: ");
+  Serial.println(gz); 
+
+  Serial.print("x-axis acceleration: ");
+  Serial.print(ax);
+  Serial.print(",  y-axis acceleration: ");
+  Serial.print(ay);
+  Serial.print(",  z-axis acceleration: ");
+  Serial.println(az);
+
+  Serial.print("x-axis magnetic field: ");
+  Serial.print(mx);
+  Serial.print(",  y-axis magnetic field: ");
+  Serial.print(my);
+  Serial.print(",  z-axis magnetic field: ");
+  Serial.println(mz); */
+
   // Serial.print(millis());
   // Serial.print(',');
   Serial.print("roll: ");
@@ -114,6 +133,6 @@ void loop()
   Serial.println(temperature); 
 
   digitalWrite(myLed, !digitalRead(myLed));
-  // delay(100);
+  // delay(50);
 
 }
