@@ -88,6 +88,8 @@ String file = "hello21.txt";
 //Current test
 char MODE;
 
+long int clk;
+
 //Method Instantiations
 void initializeSF();
 void initializeSF_SD();
@@ -115,12 +117,12 @@ void setup() {
     servoR.attach(6);  //starboard fin servo
     servoU.attach(5);   //bottom fin servo 
     servoD.attach(3);   //port fin servo 
-    ddata.println("ServoPWM: GO");
-    ddata.flush();
+    //ddata.println("ServoPWM: GO");
+    //ddata.flush();
     
     //set up adc read pins
     initializeAnalogJoystick();
-    ddata.flush();
+    //ddata.flush();
     
     // Initialize Input Switches
     pinMode(7, INPUT_PULLUP); //Calibrate
@@ -135,15 +137,15 @@ void setup() {
     u8g2.setFont(u8g2_font_fub17_tf); 
     u8g2.setContrast(0xFF); //Max Brightness (Contrast)
     u8g2.setBusClock(400000);
-    ddata.println("Diagnostic Display: GO");
-    ddata.flush();
+    //ddata.println("Diagnostic Display: GO");
+    //ddata.flush();
   
     voltageMonitoring();
-    ddata.print(percent_batt);
-    ddata.print("% Battery: ");
-    ddata.print(V_BATT);
-    ddata.println("V");
-    ddata.flush();
+    //ddata.print(percent_batt);
+    //ddata.print("% Battery: ");
+    //ddata.print(V_BATT);
+    //ddata.println("V");
+    //ddata.flush();
 
     //initialize sensor fusion
     initializeSF();
@@ -154,12 +156,14 @@ void setup() {
 
     prev_time = 0;
 
-    ddata.close();
-    ddata = SD.open(file, FILE_WRITE);
+    //ddata.close();
+    //ddata = SD.open(file, FILE_WRITE);
 
     autopilot_on = false;
 
     MODE = '0';
+
+    clk = 0;
 
 }
 
@@ -168,10 +172,12 @@ void loop() {
 //    ddata = SD.open(file, FILE_WRITE);  //open sdcard write file
 //    ddata.print("ddata opened: ");
 //    ddata.println(millis());
+
+    // FOR TESTING
     if (Serial.available() > 0) {
       MODE = Serial.read();      
     }
-//    MODE = Serial.read();
+    MODE = Serial.read();
 
     if (!digitalRead(7)) {
       calibrateIMU();
@@ -243,9 +249,15 @@ void loop() {
 
   //int myTime = (int) millis();
   //unsigned long serialCheck = (unsigned long) ((millis() % 250);
-  //if ((myTime % 100) == 0) {
-  //  serialDiagnostics();
+
+  // Remove this block eventually
+  //clk++;
+  //if (clk >= 10) {
+    //serialDiagnostics();
+    //SDcardDiagnostics();
+    //clk = 0;
   //}
+  
   serialDiagnostics();
   voltageMonitoring();
   //SDcardDiagnostics();
@@ -257,10 +269,7 @@ void loop() {
   if (current_time > prev_time) {
     prev_time = current_time;
     ddata.flush();   
-  }
-
-
-    
+  }    
 }
 
 
@@ -415,9 +424,9 @@ void calibrateIMU() {
     IMU.initLSM9DS1(); 
     Serial.println("LSM9DS1 initialized for active data mode...."); // Initialize device for active mode read of acclerometer, gyroscope, and temperature
 
-    Serial.println("Assumption is data is in the following format:");
-    Serial.println("uptime (milliseconds), roll (degrees), pitch (degrees), yaw (degrees), gyrotemperatureC (Celcius)");
-    Serial.println("Begin Outputting Data!");
+//    Serial.println("Assumption is data is in the following format:");
+//    Serial.println("uptime (milliseconds), roll (degrees), pitch (degrees), yaw (degrees), gyrotemperatureC (Celcius)");
+//    Serial.println("Begin Outputting Data!");
 
     integral_sum = 0.0;
     deltat = IMU.updateDeltat(); //this have to be done before calling the fusion update
@@ -491,7 +500,6 @@ void calibrateIMU_SD() {
 }
 
 void updateIMU() {
-    
   
     if (IMU.accelerometerReady()) {  // check if new accel data is ready  
       IMU.readAccel(ax, ay, az);
@@ -523,7 +531,7 @@ void serialDiagnostics() {
   Serial.print(gy - gy_r);
   //Serial.print(gy);
   Serial.print(",  yaw velocity: ");
-  Serial.println(gz - gz_r); 
+  Serial.print(gz - gz_r); 
   //Serial.println(gz);
  } else if (MODE == '2') {
   Serial.print("x-axis acceleration: ");
@@ -533,7 +541,7 @@ void serialDiagnostics() {
   Serial.print(ay - ay_r);
   //Serial.print(ay);
   Serial.print(",  z-axis acceleration: ");
-  Serial.println(az - az_r);
+  Serial.print(az - az_r);
   //Serial.println(az);
  } else if (MODE == '3') {
   Serial.print("x-axis magnetic field: ");
@@ -543,14 +551,14 @@ void serialDiagnostics() {
   Serial.print(my - my_r);
   //Serial.print(my);
   Serial.print(",  z-axismagnetic field: ");
-  Serial.println(mz - mz_r);
+  Serial.print(mz - mz_r);
   //Serial.println(mz);
  } else {
   Serial.print("roll: ");
   Serial.print(roll_r - roll);
-  Serial.print(",  pitch:");
+  Serial.print(", pitch:");
   Serial.print(pitch_r - pitch);
-  Serial.print(",  yaw:");
+  Serial.print(", yaw:");
   Serial.println(yaw_r - yaw);
   //Serial.println(yaw);
  }
@@ -604,11 +612,11 @@ void serialDiagnostics() {
   //  Serial.print(',');
   //  Serial.print(yaw);
     Serial.print(','); */
-// Serial.print(" Integral Sum: ");
-// Serial.print(integral_sum);
+ //Serial.print(",  Integral Sum: ");
+ //Serial.print(integral_sum);
   //  Serial.print(',');
-// Serial.print(" Autopilot Fin Angle: ");
-// Serial.println(autopilot_output);
+ //Serial.print(",  Autopilot Fin Angle: ");
+ //Serial.println(autopilot_output);
   //  Serial.print(',');
   //  Serial.println(roll_rate);
 }
