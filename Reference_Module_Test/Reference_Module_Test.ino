@@ -47,7 +47,11 @@ void setup() {
 
   IMU.initLSM9DS1();
 
-  MODE = '0';
+    MODE = 'o';
+//    MODE= 'v';
+//    MODE = 'a';
+//    MODE = 'm';
+//    MODE = 's';
 }
 
 void loop() {
@@ -85,19 +89,19 @@ void receiveEvent(int numBytes) {
 }
 
 void requestEvent() {
-  if (MODE == '1') {
+  if (MODE == 'v') {
     I2C_writeAnything(gx);
     I2C_writeAnything(gy);
     I2C_writeAnything(gz);  
-  } else if (MODE == '2') {
+  } else if (MODE == 'a') {
     I2C_writeAnything(ax);
     I2C_writeAnything(ay);
     I2C_writeAnything(az);  
-  } else if (MODE == '3') {
+  } else if (MODE == 'm') {
     I2C_writeAnything(mx);
     I2C_writeAnything(my);
     I2C_writeAnything(mz);
-  } else {
+  } else if (MODE == 'o') {
     I2C_writeAnything(roll);
     I2C_writeAnything(pitch);
     I2C_writeAnything(yaw);

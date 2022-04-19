@@ -1,13 +1,13 @@
+
+
 #include <Servo.h>
-#include <AHRS_Nano33BLE_LSM9DS1.h>
+#include <AHRS_Nano33BLE_LSM9DS1.h> 
 #include <Arduino.h>
 #include <U8g2lib.h>
 
 #ifdef U8X8_HAVE_HW_I2C
 #include <Wire.h>
 #endif
-
-#include <I2C_Anything.h>
 
 #include <SPI.h>
 #include <SD.h>
@@ -68,10 +68,6 @@ float gx, gy, gz, ax, ay, az, mx, my, mz;
 float deltat;
 float temperature;
 
-//Reference Module Variables
-float gx_r, gy_r, gz_r, ax_r, ay_r, az_r, mx_r, my_r, mz_r;
-float roll_r, pitch_r, yaw_r;
-
 //Voltage Measurment Variables
 float V_BATT;
 float V_5V; 
@@ -83,12 +79,7 @@ int prev_time;
 
 //SD Card Variables
 File ddata;
-String file = "hello21.txt";
-
-//Current test
-char MODE;
-
-long int clk;
+String file = "HELLO22.txt"; 
 
 //Method Instantiations
 void initializeSF();
@@ -104,25 +95,24 @@ void diagnosticDisplay();
 void voltageMonitoring();
 void errorCode(int blinkNum);
 void joystick_control();
-void getReferenceData();
 
 
 void setup() {
     //initialize SD card Diagnostics
-    //initializeSDCard();
-    //ddata.flush();
+    initializeSDCard();
+    ddata.flush();
     
     //Initialize Servo PWM
     servoL.attach(9);   //top fin servo
     servoR.attach(6);  //starboard fin servo
     servoU.attach(5);   //bottom fin servo 
     servoD.attach(3);   //port fin servo 
-    //ddata.println("ServoPWM: GO");
-    //ddata.flush();
+    ddata.println("ServoPWM: GO");
+    ddata.flush();
     
     //set up adc read pins
     initializeAnalogJoystick();
-    //ddata.flush();
+    ddata.flush();
     
     // Initialize Input Switches
     pinMode(7, INPUT_PULLUP); //Calibrate
@@ -137,37 +127,26 @@ void setup() {
     u8g2.setFont(u8g2_font_fub17_tf); 
     u8g2.setContrast(0xFF); //Max Brightness (Contrast)
     u8g2.setBusClock(400000);
-    //ddata.println("Diagnostic Display: GO");
-    //ddata.flush();
+    ddata.println("Diagnostic Display: GO");
+    ddata.flush();
   
     voltageMonitoring();
-    //ddata.print(percent_batt);
-    //ddata.print("% Battery: ");
-    //ddata.print(V_BATT);
-    //ddata.println("V");
-    //ddata.flush();
+    ddata.print(percent_batt);
+    ddata.print("% Battery: ");
+    ddata.print(V_BATT);
+    ddata.println("V");
+    ddata.flush();
 
     //initialize sensor fusion
-    initializeSF();
-    //initializeSF_SD(); 
-
-    // initialize i2c bus
-    Wire.begin();
+    //initializeSF();
+    initializeSF_SD(); 
 
     prev_time = 0;
 
-    //ddata.close();
-    //ddata = SD.open(file, FILE_WRITE);
+    ddata.close();
+    ddata = SD.open(file, FILE_WRITE);
 
     autopilot_on = false;
-    
-    MODE = 'o';
-//    MODE= 'v';
-//    MODE = 'a';
-//    MODE = 'm';
-//    MODE = 's';
-
-    clk = 0;
 
 }
 
@@ -177,14 +156,10 @@ void loop() {
 //    ddata.print("ddata opened: ");
 //    ddata.println(millis());
 
-    // FOR TESTING
-    if (Serial.available() > 0) {
-      MODE = Serial.read();      
-    }
-
+    
     if (!digitalRead(7)) {
-      calibrateIMU();
-      //calibrateIMU_SD();
+      //calibrateIMU();
+      calibrateIMU_SD();
     }
 
     updateIMU();
@@ -247,32 +222,21 @@ void loop() {
   servoR.write(180 - x_pos + autopilot_output);
   servoU.write(y_pos + autopilot_output);
   servoD.write(180 - y_pos + autopilot_output);
+  //delay(10);
 
-  getReferenceData();
-
-  //int myTime = (int) millis();
-  //unsigned long serialCheck = (unsigned long) ((millis() % 250);
-
-  // Remove this block eventually
-  //clk++;
-  //if (clk >= 10) {
-    //serialDiagnostics();
-    //SDcardDiagnostics();
-    //clk = 0;
-  //}
-  
-  serialDiagnostics();
+  //serialDiagnostics();
   voltageMonitoring();
-  //SDcardDiagnostics();
-
-  //delay(100);
+  SDcardDiagnostics();
 
   //limit SD card refresh to 0.1hz to maintain cpu performance
   int current_time = int(millis()/10000);
   if (current_time > prev_time) {
     prev_time = current_time;
     ddata.flush();   
-  }    
+  }
+
+
+    
 }
 
 
@@ -292,26 +256,26 @@ void initializeSF() {
     //IMU Start
     Serial.begin(38400);
     while (!Serial);
-    //Serial.println("Waited for Serial.");
+    Serial.println("Waited for Serial.");
   
     if (!IMU.start())
     {
-      //Serial.println("Failed to initialize IMU!");
+      Serial.println("Failed to initialize IMU!");
       while (1);
     }
-    //Serial.println("Perform gyro and accel self test.");
+    Serial.println("Perform gyro and accel self test.");
     if (!IMU.selftestLSM9DS1())
     {
-      //Serial.println("Failed self test"); // check function of gyro and accelerometer via self test
+      Serial.println("Failed self test"); // check function of gyro and accelerometer via self test
       while (1);
     }
     else
     {  
-      //Serial.println("LSM9DS1 is online and passed self test...");
+      Serial.println("LSM9DS1 is online and passed self test...");
   
-      //Serial.print("accel sensitivity is "); Serial.print(IMU.accelerationSensitivity()); Serial.println(" LSB/mg");
-      //Serial.print("gyro sensitivity is "); Serial.print(IMU.gyroscopeSensitivity()); Serial.println(" LSB/mdps");
-      //Serial.print("mag sensitivity is "); Serial.print(IMU.magnometerSensitivity()); Serial.println(" LSB/mGauss");
+      Serial.print("accel sensitivity is "); Serial.print(IMU.accelerationSensitivity()); Serial.println(" LSB/mg");
+      Serial.print("gyro sensitivity is "); Serial.print(IMU.gyroscopeSensitivity()); Serial.println(" LSB/mdps");
+      Serial.print("mag sensitivity is "); Serial.print(IMU.magnometerSensitivity()); Serial.println(" LSB/mGauss");
       calibrateIMU();
     }
 }
@@ -351,7 +315,7 @@ void initializeSF_SD() {
       ddata.print("accel sensitivity is "); ddata.print(IMU.accelerationSensitivity()); ddata.println(" LSB/mg");
       ddata.print("gyro sensitivity is "); ddata.print(IMU.gyroscopeSensitivity()); ddata.println(" LSB/mdps");
       ddata.print("mag sensitivity is "); ddata.print(IMU.magnometerSensitivity()); ddata.println(" LSB/mGauss");
-      calibrateIMU();
+      calibrateIMU_SD();
     }
 }
 
@@ -411,25 +375,25 @@ void calibrateIMU() {
     u8g2.print(F("ACTIVE")); 
     } while ( u8g2.nextPage() );
    
-    //Serial.println("Calibrate gyro and accel");
+    Serial.println("Calibrate gyro and accel");
     IMU.calibrateAccelGyro(); // Calibrate gyro and accelerometers, load biases in bias registers
 
     float* accelBias = IMU.getAccelBias();
     float* gyroBias = IMU.getGyroBias();
 
-    //Serial.println("accel biases (mg)"); Serial.println(1000.*accelBias[0]); Serial.println(1000.*accelBias[1]); Serial.println(1000.*accelBias[2]);
-    //Serial.println("gyro biases (dps)"); Serial.println(gyroBias[0]); Serial.println(gyroBias[1]); Serial.println(gyroBias[2]);
+    Serial.println("accel biases (mg)"); Serial.println(1000.*accelBias[0]); Serial.println(1000.*accelBias[1]); Serial.println(1000.*accelBias[2]);
+    Serial.println("gyro biases (dps)"); Serial.println(gyroBias[0]); Serial.println(gyroBias[1]); Serial.println(gyroBias[2]);
 
     IMU.calibrateMag();
     float* magBias = IMU.getMagBias();
-    //Serial.println("mag biases (mG)"); Serial.println(1000.*magBias[0]); Serial.println(1000.*magBias[1]); Serial.println(1000.*magBias[2]); 
+    Serial.println("mag biases (mG)"); Serial.println(1000.*magBias[0]); Serial.println(1000.*magBias[1]); Serial.println(1000.*magBias[2]); 
 
     IMU.initLSM9DS1(); 
-    //Serial.println("LSM9DS1 initialized for active data mode...."); // Initialize device for active mode read of acclerometer, gyroscope, and temperature
+    Serial.println("LSM9DS1 initialized for active data mode...."); // Initialize device for active mode read of acclerometer, gyroscope, and temperature
 
-//    Serial.println("Assumption is data is in the following format:");
-//    Serial.println("uptime (milliseconds), roll (degrees), pitch (degrees), yaw (degrees), gyrotemperatureC (Celcius)");
-//    Serial.println("Begin Outputting Data!");
+    Serial.println("Assumption is data is in the following format:");
+    Serial.println("uptime (milliseconds), roll (degrees), pitch (degrees), yaw (degrees), gyrotemperatureC (Celcius)");
+    Serial.println("Begin Outputting Data!");
 
     integral_sum = 0.0;
     deltat = IMU.updateDeltat(); //this have to be done before calling the fusion update
@@ -503,6 +467,7 @@ void calibrateIMU_SD() {
 }
 
 void updateIMU() {
+    
   
     if (IMU.accelerometerReady()) {  // check if new accel data is ready  
       IMU.readAccel(ax, ay, az);
@@ -518,128 +483,23 @@ void updateIMU() {
   
     deltat = IMU.updateDeltat(); //this have to be done before calling the fusion update
     IMU.MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, -mx, my, mz, deltat);
-
-    
 }
 
 void serialDiagnostics() {
- if (MODE == 'v') {
-  Serial.print(millis());
-  Serial.print(":  ");
-  Serial.print("roll velocities: ");
-  Serial.print(gx);
-  Serial.print(", ");
-  Serial.print(gx_r);
-  Serial.print(";   pitch velocities: ");
-  Serial.print(gy);
-  Serial.print(", ");
-  Serial.print(gy_r);
-  Serial.print(";   yaw velocities: ");
-  Serial.print(gz);
-  Serial.print(", ");
-  Serial.println(gz_r);
- } else if (MODE == 'a') {
-  Serial.print(millis());
-  Serial.print(":  ");
-  Serial.print("x-axis accel: ");
-  Serial.print(ax);
-  Serial.print(", ");
-  Serial.print(ax_r);
-  Serial.print(";   y-axis accel: ");
-  Serial.print(ax);
-  Serial.print(", ");
-  Serial.print(ay_r);
-  Serial.print(";   z-axis accel: ");
-  Serial.print(az);
-  Serial.print(", ");
-  Serial.println(az_r);
- } else if (MODE == 'm') {
-  Serial.print(millis());
-  Serial.print(":  ");
-  Serial.print("x-axis mag field: ");
-  Serial.print(mx);
-  Serial.print(", ");
-  Serial.print(mx_r);
-  Serial.print(";   y-axis mag field: ");
-  Serial.print(my);
-  Serial.print(", ");
-  Serial.print(my_r);
-  Serial.print(";   z-axis mag field: ");
-  Serial.print(mz);
-  Serial.print(", ");
-  Serial.println(mz_r);
- } else if (MODE == 'o') {
-  Serial.print(millis());
-  Serial.print(":  ");
-  Serial.print(-1 * roll);
-  Serial.print(" ");
-  Serial.print(-1 * roll_r);
-  Serial.print(" ");
-  Serial.print(-1 * pitch);
-  Serial.print(" ");
-  Serial.print(-1 * pitch_r);
-  Serial.print(" "); 
-  Serial.print(-1 * yaw);
-  Serial.print(" ");
-  Serial.println(-1 * yaw_r);
- } else {
-  // print nothing (stop data output)
- }
-
-/* Serial.println();
-
- Serial.print("roll velocity: ");
- Serial.print(gx - gx_r);
- Serial.print(",  pitch velocity: ");
- Serial.print(gy - gy_r);
- Serial.print(",  yaw velocity: ");
- Serial.println(gz - gz_r);
-
- Serial.print("x-axis acceleration: ");
- Serial.print(ax - ax_r);
- Serial.print(",  y-axis acceleration: ");
- Serial.print(ay - ay_r);
- Serial.print(",  z-axis acceleration: ");
- Serial.println(az - az_r);
-
- Serial.print("x-axis magnetic field: ");
- Serial.print(mx);
- Serial.print(",  y-axis magnetic field: ");
- Serial.print(my);
- Serial.print(",  z-axismagnetic field: ");
- Serial.println(mz); */
-  
-/*  Serial.print(roll_s);
-  Serial.print(" - ");
-  Serial.print(roll_m);
-  Serial.print(" = "); 
-  Serial.print(roll_t);
-  
-  Serial.print(",  pitch: ");
-/*  Serial.print(pitch_s);
-  Serial.print(" - ");
-  Serial.print(pitch_m);
-  Serial.print(" = "); 
-  Serial.print(pitch_t);
-  
-  Serial.print(",  yaw: ");
-/*  Serial.print(yaw_s);
-  Serial.print(" - ");
-  Serial.print(yaw_m);
-  Serial.print(" = "); 
-  Serial.println(yaw_t);
+    Serial.print(millis());
+    Serial.print(',');
     Serial.print(" Roll: ");
     Serial.print(roll);
   //  Serial.print(',');
   //  Serial.print(pitch);
   //  Serial.print(',');
   //  Serial.print(yaw);
-    Serial.print(','); */
- //Serial.print(",  Integral Sum: ");
- //Serial.print(integral_sum);
-  //  Serial.print(',');
- //Serial.print(",  Autopilot Fin Angle: ");
- //Serial.println(autopilot_output);
+    Serial.print(',');
+    Serial.print(" Integral Sum: ");
+    Serial.print(integral_sum);
+    Serial.print(',');
+    Serial.print(" Autopilot Fin Angle: ");
+    Serial.println(autopilot_output);
   //  Serial.print(',');
   //  Serial.println(roll_rate);
 }
@@ -647,32 +507,30 @@ void serialDiagnostics() {
 //Creates a CSV file and stores the data to the external SD card
 void SDcardDiagnostics() {
     ddata.print(millis());
-    ddata.print(',');
-  //  ddata.print(" Roll: ");
+    ddata.print(",  ");
+    ddata.print(" Roll: ");
     ddata.print(roll);
-    ddata.print(',');
+    ddata.print(", Accelorometer: ");
     ddata.print(az);
-    ddata.print(',');
+    ddata.print(", Pitch: ");
     ddata.print(pitch);
-    ddata.print(',');
+    ddata.print(", Yaw: ");
     ddata.print(yaw);
-    ddata.print(',');
-  //  ddata.print(" Integral Sum: ");
+    ddata.print(", Integral Sum: ");
     ddata.print(integral_sum);
-    ddata.print(',');
-  //  ddata.print(" Autopilot Fin Angle: ");
+    ddata.print(", Autopilot Fin Angle: ");
     ddata.print(autopilot_output);
-    ddata.print(',');
-    ddata.print(roll_rate);
-    ddata.print(',');
-  //  ddata.print(" VBATT: ");
-    ddata.print(V_BATT);
-    ddata.print(',');
+    //ddata.print(',');
+    //ddata.print(roll_rate);
+    //ddata.print(',');
+    ddata.print(", VBATT: ");
+    ddata.println(V_BATT);
+   // ddata.print(',');
   //  ddata.print(" 5V: ");
-    ddata.print(V_5V);
-    ddata.print(',');
+   // ddata.print(V_5V);
+   // ddata.print(',');
   //  ddata.print(" 3.3V: ");
-    ddata.println(V_3V3);
+   // ddata.println(V_3V3);
     
 }
 
@@ -780,31 +638,4 @@ void joystick_control() {
     }
     x_pos = (((x_pos/100) - 90) * JOYSTICK_SENSITIVITY) + 90;
     y_pos = (((y_pos/100) - 90) * JOYSTICK_SENSITIVITY) + 90;
-}
-
-void getReferenceData() {
-  Wire.beginTransmission(8);
-  Wire.write(MODE);
-  Wire.endTransmission();
-  
-  Wire.requestFrom(8,12);
-  if (Wire.available() >= 12) {
-    if (MODE == 'v') {
-      I2C_readAnything(gx_r);
-      I2C_readAnything(gy_r);
-      I2C_readAnything(gz_r);         
-    } else if (MODE == 'a') {
-      I2C_readAnything(ax_r);
-      I2C_readAnything(ay_r);
-      I2C_readAnything(az_r);    
-    } else if (MODE == 'm') {
-      I2C_readAnything(mx_r);
-      I2C_readAnything(my_r);
-      I2C_readAnything(mz_r);
-    } else if (MODE == 'o') {
-      I2C_readAnything(roll_r);
-      I2C_readAnything(pitch_r);
-      I2C_readAnything(yaw_r);  
-    }
-  }
-}
+}   

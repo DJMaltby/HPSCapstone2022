@@ -23,7 +23,7 @@
 //U8G2_SSD1327_EA_W128128_1_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE); /* Uno: A4=SDA, A5=SCL, add "u8g2.setBusClock(400000);" into setup() for speedup if possible */
 //U8G2_SSD1327_MIDAS_128X128_1_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE); /* Uno: A4=SDA, A5=SCL, add "u8g2.setBusClock(400000);" into setup() for speedup if possible */
 
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+//U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
 // End of constructor list
 
@@ -104,13 +104,16 @@ void diagnosticDisplay();
 void voltageMonitoring();
 void errorCode(int blinkNum);
 void joystick_control();
-void getReferenceData();
-
+void receiveEvent(int numBytes);
+void requestEvent();
 
 void setup() {
     //initialize SD card Diagnostics
     //initializeSDCard();
     //ddata.flush();
+    Wire.begin(8);
+    Wire.onRequest(requestEvent);
+    Wire.onReceive(receiveEvent);
     
     //Initialize Servo PWM
     servoL.attach(9);   //top fin servo
@@ -128,6 +131,7 @@ void setup() {
     pinMode(7, INPUT_PULLUP); //Calibrate
     pinMode(8, INPUT_PULLUP); //Autopilot Engage
 
+    /*
     //Initialize Diagnostic I2C Display
     u8g2.begin();
     u8x8_cad_StartTransfer(u8g2.getU8x8());
@@ -138,7 +142,7 @@ void setup() {
     u8g2.setContrast(0xFF); //Max Brightness (Contrast)
     u8g2.setBusClock(400000);
     //ddata.println("Diagnostic Display: GO");
-    //ddata.flush();
+    //ddata.flush(); */
   
     voltageMonitoring();
     //ddata.print(percent_batt);
@@ -151,36 +155,23 @@ void setup() {
     initializeSF();
     //initializeSF_SD(); 
 
-    // initialize i2c bus
-    Wire.begin();
-
+    // old ver
+    // Wire.begin();
+    
     prev_time = 0;
 
     //ddata.close();
     //ddata = SD.open(file, FILE_WRITE);
 
     autopilot_on = false;
-    
-    MODE = 'o';
-//    MODE= 'v';
-//    MODE = 'a';
-//    MODE = 'm';
-//    MODE = 's';
 
-    clk = 0;
-
+    MODE = '0';
 }
 
 void loop() {
-
 //    ddata = SD.open(file, FILE_WRITE);  //open sdcard write file
 //    ddata.print("ddata opened: ");
 //    ddata.println(millis());
-
-    // FOR TESTING
-    if (Serial.available() > 0) {
-      MODE = Serial.read();      
-    }
 
     if (!digitalRead(7)) {
       calibrateIMU();
@@ -193,12 +184,12 @@ void loop() {
     pitch = IMU.pitchDegrees();
     yaw = IMU.yawDegrees();
     temperature = IMU.readTempC();
-    
+
     current_roll = roll * (3.1415926 / 180);
     integral_sum = integral_sum + (current_roll * deltat);
     roll_rate = gy * (3.1415926 / 180);
 
-
+    /*
     if (digitalRead(8)) { //If autopilot is disabled
       autopilot_output = 0;
       digitalWrite(myLED, LOW);
@@ -239,16 +230,16 @@ void loop() {
           u8g2.print("ACTIVE");
         } while ( u8g2.nextPage() );              
       }
-  }
+  } */
 
-  joystick_control();
+  //joystick_control();
             
-  servoL.write(x_pos + autopilot_output);
-  servoR.write(180 - x_pos + autopilot_output);
-  servoU.write(y_pos + autopilot_output);
-  servoD.write(180 - y_pos + autopilot_output);
+  //servoL.write(x_pos + autopilot_output);
+  //servoR.write(180 - x_pos + autopilot_output);
+  //servoU.write(y_pos + autopilot_output);
+  //servoD.write(180 - y_pos + autopilot_output);
 
-  getReferenceData();
+  // getReferenceData();
 
   //int myTime = (int) millis();
   //unsigned long serialCheck = (unsigned long) ((millis() % 250);
@@ -261,24 +252,25 @@ void loop() {
     //clk = 0;
   //}
   
-  serialDiagnostics();
+  //serialDiagnostics();
   voltageMonitoring();
   //SDcardDiagnostics();
 
   //delay(100);
 
   //limit SD card refresh to 0.1hz to maintain cpu performance
-  int current_time = int(millis()/10000);
-  if (current_time > prev_time) {
-    prev_time = current_time;
-    ddata.flush();   
-  }    
+  //int current_time = int(millis()/10000);
+  //if (current_time > prev_time) {
+  //  prev_time = current_time;
+  //  ddata.flush();   
+  //}    
 }
 
 
 
 void initializeSF() {
-  
+
+    /*
     //Print to Display
     u8g2.firstPage();
     do {
@@ -287,11 +279,11 @@ void initializeSF() {
     u8g2.print(F("BEGIN SERIAL")); 
     u8g2.setCursor(25, 60);
     u8g2.print(F("STARTUP")); 
-    } while ( u8g2.nextPage() );
+    } while ( u8g2.nextPage() ); */
   
     //IMU Start
-    Serial.begin(38400);
-    while (!Serial);
+    //Serial.begin(38400);
+    //while (!Serial);
     //Serial.println("Waited for Serial.");
   
     if (!IMU.start())
@@ -316,6 +308,7 @@ void initializeSF() {
     }
 }
 
+/*
 void initializeSF_SD() {
   
     //Print to Display
@@ -353,8 +346,9 @@ void initializeSF_SD() {
       ddata.print("mag sensitivity is "); ddata.print(IMU.magnometerSensitivity()); ddata.println(" LSB/mGauss");
       calibrateIMU();
     }
-}
+} */
 
+/*
 void initializeSDCard() {
     if (!SD.begin(4)) { //Select the CS pin (Pin 4)
       while (1) {errorCode(3);}         
@@ -366,7 +360,7 @@ void initializeSDCard() {
     // if the file didn't open, print an error:
       while(1) {errorCode(4);}
   }
-}
+} */
 
 void initializeAnalogJoystick() {
     joystick_x_90 = analogRead(A1);
@@ -401,6 +395,7 @@ void initializeAnalogJoystick() {
 
 void calibrateIMU() {
 
+    /*
     //Print to Display
     u8g2.firstPage();
     do {
@@ -409,7 +404,7 @@ void calibrateIMU() {
     u8g2.print(F("CALIBRATE")); 
     u8g2.setCursor(20, 80);
     u8g2.print(F("ACTIVE")); 
-    } while ( u8g2.nextPage() );
+    } while ( u8g2.nextPage() ); */
    
     //Serial.println("Calibrate gyro and accel");
     IMU.calibrateAccelGyro(); // Calibrate gyro and accelerometers, load biases in bias registers
@@ -435,6 +430,7 @@ void calibrateIMU() {
     deltat = IMU.updateDeltat(); //this have to be done before calling the fusion update
 }
 
+/*
 void calibrateIMU_SD() {
     ddata.println("Calibrating IMU");
     
@@ -496,11 +492,8 @@ void calibrateIMU_SD() {
     } while ( u8g2.nextPage() );
 
     
-    deltat = IMU.updateDeltat(); //this have to be done before calling the fusion update
-
-
-    
-}
+    deltat = IMU.updateDeltat(); //this have to be done before calling the fusion update   
+} */
 
 void updateIMU() {
   
@@ -518,132 +511,9 @@ void updateIMU() {
   
     deltat = IMU.updateDeltat(); //this have to be done before calling the fusion update
     IMU.MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, -mx, my, mz, deltat);
-
-    
 }
 
-void serialDiagnostics() {
- if (MODE == 'v') {
-  Serial.print(millis());
-  Serial.print(":  ");
-  Serial.print("roll velocities: ");
-  Serial.print(gx);
-  Serial.print(", ");
-  Serial.print(gx_r);
-  Serial.print(";   pitch velocities: ");
-  Serial.print(gy);
-  Serial.print(", ");
-  Serial.print(gy_r);
-  Serial.print(";   yaw velocities: ");
-  Serial.print(gz);
-  Serial.print(", ");
-  Serial.println(gz_r);
- } else if (MODE == 'a') {
-  Serial.print(millis());
-  Serial.print(":  ");
-  Serial.print("x-axis accel: ");
-  Serial.print(ax);
-  Serial.print(", ");
-  Serial.print(ax_r);
-  Serial.print(";   y-axis accel: ");
-  Serial.print(ax);
-  Serial.print(", ");
-  Serial.print(ay_r);
-  Serial.print(";   z-axis accel: ");
-  Serial.print(az);
-  Serial.print(", ");
-  Serial.println(az_r);
- } else if (MODE == 'm') {
-  Serial.print(millis());
-  Serial.print(":  ");
-  Serial.print("x-axis mag field: ");
-  Serial.print(mx);
-  Serial.print(", ");
-  Serial.print(mx_r);
-  Serial.print(";   y-axis mag field: ");
-  Serial.print(my);
-  Serial.print(", ");
-  Serial.print(my_r);
-  Serial.print(";   z-axis mag field: ");
-  Serial.print(mz);
-  Serial.print(", ");
-  Serial.println(mz_r);
- } else if (MODE == 'o') {
-  Serial.print(millis());
-  Serial.print(":  ");
-  Serial.print(-1 * roll);
-  Serial.print(" ");
-  Serial.print(-1 * roll_r);
-  Serial.print(" ");
-  Serial.print(-1 * pitch);
-  Serial.print(" ");
-  Serial.print(-1 * pitch_r);
-  Serial.print(" "); 
-  Serial.print(-1 * yaw);
-  Serial.print(" ");
-  Serial.println(-1 * yaw_r);
- } else {
-  // print nothing (stop data output)
- }
-
-/* Serial.println();
-
- Serial.print("roll velocity: ");
- Serial.print(gx - gx_r);
- Serial.print(",  pitch velocity: ");
- Serial.print(gy - gy_r);
- Serial.print(",  yaw velocity: ");
- Serial.println(gz - gz_r);
-
- Serial.print("x-axis acceleration: ");
- Serial.print(ax - ax_r);
- Serial.print(",  y-axis acceleration: ");
- Serial.print(ay - ay_r);
- Serial.print(",  z-axis acceleration: ");
- Serial.println(az - az_r);
-
- Serial.print("x-axis magnetic field: ");
- Serial.print(mx);
- Serial.print(",  y-axis magnetic field: ");
- Serial.print(my);
- Serial.print(",  z-axismagnetic field: ");
- Serial.println(mz); */
-  
-/*  Serial.print(roll_s);
-  Serial.print(" - ");
-  Serial.print(roll_m);
-  Serial.print(" = "); 
-  Serial.print(roll_t);
-  
-  Serial.print(",  pitch: ");
-/*  Serial.print(pitch_s);
-  Serial.print(" - ");
-  Serial.print(pitch_m);
-  Serial.print(" = "); 
-  Serial.print(pitch_t);
-  
-  Serial.print(",  yaw: ");
-/*  Serial.print(yaw_s);
-  Serial.print(" - ");
-  Serial.print(yaw_m);
-  Serial.print(" = "); 
-  Serial.println(yaw_t);
-    Serial.print(" Roll: ");
-    Serial.print(roll);
-  //  Serial.print(',');
-  //  Serial.print(pitch);
-  //  Serial.print(',');
-  //  Serial.print(yaw);
-    Serial.print(','); */
- //Serial.print(",  Integral Sum: ");
- //Serial.print(integral_sum);
-  //  Serial.print(',');
- //Serial.print(",  Autopilot Fin Angle: ");
- //Serial.println(autopilot_output);
-  //  Serial.print(',');
-  //  Serial.println(roll_rate);
-}
-
+/*
 //Creates a CSV file and stores the data to the external SD card
 void SDcardDiagnostics() {
     ddata.print(millis());
@@ -674,8 +544,9 @@ void SDcardDiagnostics() {
   //  ddata.print(" 3.3V: ");
     ddata.println(V_3V3);
     
-}
+} */
 
+/*
 void diagnosticDisplay() {
     float _roll;
     int neg_roll;
@@ -722,7 +593,7 @@ void diagnosticDisplay() {
     } while ( u8g2.nextPage() );
 
 
-}
+} */
 
 void voltageMonitoring() {
     int V_BATT_READ = analogRead(A7);
@@ -759,6 +630,7 @@ void errorCode(int blinkNum) {
     
 }
 
+/*
 void joystick_control() {
     //Record and average 10 values of joystick control
     x_pos = 0;
@@ -780,31 +652,28 @@ void joystick_control() {
     }
     x_pos = (((x_pos/100) - 90) * JOYSTICK_SENSITIVITY) + 90;
     y_pos = (((y_pos/100) - 90) * JOYSTICK_SENSITIVITY) + 90;
+} */
+
+void receiveEvent(int numBytes) {
+  MODE = Wire.read();  
 }
 
-void getReferenceData() {
-  Wire.beginTransmission(8);
-  Wire.write(MODE);
-  Wire.endTransmission();
-  
-  Wire.requestFrom(8,12);
-  if (Wire.available() >= 12) {
-    if (MODE == 'v') {
-      I2C_readAnything(gx_r);
-      I2C_readAnything(gy_r);
-      I2C_readAnything(gz_r);         
-    } else if (MODE == 'a') {
-      I2C_readAnything(ax_r);
-      I2C_readAnything(ay_r);
-      I2C_readAnything(az_r);    
-    } else if (MODE == 'm') {
-      I2C_readAnything(mx_r);
-      I2C_readAnything(my_r);
-      I2C_readAnything(mz_r);
-    } else if (MODE == 'o') {
-      I2C_readAnything(roll_r);
-      I2C_readAnything(pitch_r);
-      I2C_readAnything(yaw_r);  
-    }
+void requestEvent() {
+  if (MODE == '1') {
+    I2C_writeAnything(gx);
+    I2C_writeAnything(gy);
+    I2C_writeAnything(gz);  
+  } else if (MODE == '2') {
+    I2C_writeAnything(ax);
+    I2C_writeAnything(ay);
+    I2C_writeAnything(az);  
+  } else if (MODE == '3') {
+    I2C_writeAnything(mx);
+    I2C_writeAnything(my);
+    I2C_writeAnything(mz);
+  } else {
+    I2C_writeAnything(roll);
+    I2C_writeAnything(pitch);
+    I2C_writeAnything(yaw);
   }
 }
