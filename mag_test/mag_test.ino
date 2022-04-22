@@ -16,6 +16,8 @@ void setup()
     Serial.println("Failed to initialize IMU!");
     while (1);
   }
+  IMU.setMagnetODR(8);
+  IMU.setMagnetFS(0);
   //Wire.begin();  
   //compass = HMC5883L();  
   //setupHMC5883L();       
@@ -23,16 +25,21 @@ void setup()
 
 void loop()
 {
-  if (IMU.magneticFieldAvailable()) {
-    IMU.readMagneticField(x,y,z);
-  }
+  //if (IMU.magneticFieldAvailable()) {
+  //  IMU.readMagneticField(x,y,z);
+  //}
 
+  // Uncalibrated, raw data
+  if (IMU.magnetAvailable()) {
+    IMU.readRawMagnet(x,y,z);
+  }
+  
   Serial.flush(); 
-  Serial.print(x);
-  Serial.print(",");
-  Serial.print(y);
-  Serial.print(",");
-  Serial.print(z);
+  Serial.print(x * 1000.0);        // raw output in microTesla (could be wrong here), data needs to be in nanoTesla
+  Serial.print("  ");
+  Serial.print(y * 1000.0);
+  Serial.print("  ");
+  Serial.print(z * 1000.0);
   Serial.println();
 
   /*
@@ -43,7 +50,7 @@ void loop()
   Serial.print(zv);
   Serial.println(); */
 
-  delay(100); 
+  //delay(100); 
 } 
 
 /*

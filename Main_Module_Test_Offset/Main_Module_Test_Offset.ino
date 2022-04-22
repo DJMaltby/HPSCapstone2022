@@ -149,7 +149,9 @@ void setup() {
 
     //initialize sensor fusion
     initializeSF();
-    //initializeSF_SD(); 
+    //initializeSF_SD();
+
+    
 
     // initialize i2c bus
     Wire.begin();
@@ -411,21 +413,21 @@ void calibrateIMU() {
     u8g2.print(F("ACTIVE")); 
     } while ( u8g2.nextPage() );
    
-    //Serial.println("Calibrate gyro and accel");
+    Serial.println("Calibrate gyro and accel");
     IMU.calibrateAccelGyro(); // Calibrate gyro and accelerometers, load biases in bias registers
 
     float* accelBias = IMU.getAccelBias();
     float* gyroBias = IMU.getGyroBias();
 
-    //Serial.println("accel biases (mg)"); Serial.println(1000.*accelBias[0]); Serial.println(1000.*accelBias[1]); Serial.println(1000.*accelBias[2]);
-    //Serial.println("gyro biases (dps)"); Serial.println(gyroBias[0]); Serial.println(gyroBias[1]); Serial.println(gyroBias[2]);
+    Serial.println("accel biases (mg)"); Serial.println(1000.*accelBias[0]); Serial.println(1000.*accelBias[1]); Serial.println(1000.*accelBias[2]);
+    Serial.println("gyro biases (dps)"); Serial.println(gyroBias[0]); Serial.println(gyroBias[1]); Serial.println(gyroBias[2]);
 
     IMU.calibrateMag();
     float* magBias = IMU.getMagBias();
-    //Serial.println("mag biases (mG)"); Serial.println(1000.*magBias[0]); Serial.println(1000.*magBias[1]); Serial.println(1000.*magBias[2]); 
+    Serial.println("mag biases (mG)"); Serial.println(1000.*magBias[0]); Serial.println(1000.*magBias[1]); Serial.println(1000.*magBias[2]); 
 
     IMU.initLSM9DS1(); 
-    //Serial.println("LSM9DS1 initialized for active data mode...."); // Initialize device for active mode read of acclerometer, gyroscope, and temperature
+    Serial.println("LSM9DS1 initialized for active data mode...."); // Initialize device for active mode read of acclerometer, gyroscope, and temperature
 
 //    Serial.println("Assumption is data is in the following format:");
 //    Serial.println("uptime (milliseconds), roll (degrees), pitch (degrees), yaw (degrees), gyrotemperatureC (Celcius)");
@@ -517,7 +519,7 @@ void updateIMU() {
     }
   
     deltat = IMU.updateDeltat(); //this have to be done before calling the fusion update
-    IMU.MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, -mx, my, mz, deltat);
+    IMU.MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, -mx, -my, mz, deltat);
 
     
 }
@@ -572,15 +574,15 @@ void serialDiagnostics() {
   Serial.print(millis());
   Serial.print(":  ");
   Serial.print(-1 * roll);
-  Serial.print(" ");
+  Serial.print("      ");
   Serial.print(-1 * roll_r);
-  Serial.print(" ");
+  Serial.print("      ");
   Serial.print(-1 * pitch);
-  Serial.print(" ");
+  Serial.print("      ");
   Serial.print(-1 * pitch_r);
-  Serial.print(" "); 
+  Serial.print("      "); 
   Serial.print(-1 * yaw);
-  Serial.print(" ");
+  Serial.print("      ");
   Serial.println(-1 * yaw_r);
  } else {
   // print nothing (stop data output)

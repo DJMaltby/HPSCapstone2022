@@ -121,16 +121,15 @@ void loop()
   Serial.print(",  z-axis magnetic field: ");
   Serial.println(mz); */
 
-  // Serial.print(millis());
-  // Serial.print(',');
-  Serial.print("roll: ");
+  Serial.print(millis());
+  Serial.print(":   ");
   Serial.print(roll);
-  Serial.print(",  pitch:");
+  Serial.print("    ");
   Serial.print(pitch);
-  Serial.print(",  yaw:");
+  Serial.print("    ");
   Serial.print(yaw);
-  Serial.print(",  temperature:");
-  Serial.println(temperature); 
+  //Serial.print(",  temperature:");
+  //Serial.println(temperature); 
 
   digitalWrite(myLed, !digitalRead(myLed));
   // delay(50);
