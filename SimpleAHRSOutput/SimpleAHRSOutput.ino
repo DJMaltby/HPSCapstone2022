@@ -33,6 +33,8 @@ float mx_off, my_off, mz_off;
 // press 'o' to display live data feed, any other key to stop
 char MODE;
 
+int clk = 0;
+
 void setup()
 {
   Serial.begin(38400);
@@ -124,35 +126,19 @@ void loop() {
   pitch = IMU.pitchDegrees();
   yaw = IMU.yawDegrees();
 
-/*  Serial.print("roll velocity: ");
-  Serial.print(gx);
-  Serial.print(",  pitch velocity: ");
-  Serial.print(gy);
-  Serial.print(",  yaw velocity: ");
-  Serial.println(gz); 
-
-  Serial.print("x-axis acceleration: ");
-  Serial.print(ax);
-  Serial.print(",  y-axis acceleration: ");
-  Serial.print(ay);
-  Serial.print(",  z-axis acceleration: ");
-  Serial.println(az);
-
-  Serial.print("x-axis magnetic field: ");
-  Serial.print(mx);
-  Serial.print(",  y-axis magnetic field: ");
-  Serial.print(my);
-  Serial.print(",  z-axis magnetic field: ");
-  Serial.println(mz); */
-  if (MODE == 'o') {
-    Serial.print(millis());
-    Serial.print("        ");
-    Serial.print(-1 * roll);
-    Serial.print("        ");
-    Serial.print(-1 * pitch);
-    Serial.print("        "); 
-    Serial.println(-1 * yaw);
-  } else {
-    //do nothing, stop printing data  
+  clk++;
+  if (clk >= 10) {
+    if (MODE == 'o') {
+      Serial.print(millis());
+      Serial.print("        ");
+      Serial.print(-1 * roll);
+      Serial.print("        ");
+      Serial.print(-1 * pitch);
+      Serial.print("        "); 
+      Serial.println(-1 * yaw);
+      clk = 0;
+    } else {
+      //do nothing, stop printing data  
+    }
   }
 }

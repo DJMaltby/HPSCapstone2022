@@ -252,9 +252,6 @@ void loop() {
 
   getReferenceData();
 
-  //int myTime = (int) millis();
-  //unsigned long serialCheck = (unsigned long) ((millis() % 250);
-
   // Remove this block eventually
   //clk++;
   //if (clk >= 10) {
