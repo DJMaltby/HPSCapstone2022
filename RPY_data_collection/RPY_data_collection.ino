@@ -1,5 +1,6 @@
 #include <Servo.h>
 #include <AHRS_Nano33BLE_LSM9DS1.h>
+#include <Arduino_LSM9DS1.h> 
 #include <Arduino.h>
 #include <U8g2lib.h>
 
@@ -12,10 +13,6 @@
 #include <SPI.h>
 #include <SD.h>
 
-
-
-
-
 // U8g2 Contructor List (Picture Loop Page Buffer)
 // The complete list is available here: https://github.com/olikraus/u8g2/wiki/u8g2setupcpp
 
@@ -27,29 +24,7 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
 // End of constructor list
 
-
 int myLED  = 11;
-
-//Joystick Variables
-Servo servoL;
-Servo servoU;
-Servo servoR;
-Servo servoD;
-
-//ServoTimer2 servoL;
-//ServoTimer2 servoU;
-//ServoTimer2 servoR;
-//ServoTimer2 servoD;
-
-int joystick_x_90;
-int joystick_y_90;
-float x_pos;
-int x_joy;
-float y_pos;
-int y_joy;
-float x, y, z;
-int pos = 0;
-float JOYSTICK_SENSITIVITY = 0.25; // a value of 1 gives 90 degrees of control
 
 //Autopilot Variables
 float integral_sum = 0;
@@ -67,6 +42,10 @@ float pitch, roll, yaw;
 float gx, gy, gz, ax, ay, az, mx, my, mz;
 float deltat;
 float temperature;
+
+//Magnetometer calibration variables
+float mx_raw, my_raw, mz_raw;
+float mx_off, my_off, mz_off;
 
 //Reference Module Variables
 float gx_r, gy_r, gz_r, ax_r, ay_r, az_r, mx_r, my_r, mz_r;
@@ -94,7 +73,6 @@ long int clk;
 void initializeSF();
 void initializeSF_SD();
 void initializeSDCard();
-void initializeAnalogJoystick();
 void calibrateIMU();
 void calibrateIMU_SD();
 void updateIMU();
@@ -103,28 +81,14 @@ void SDcardDiagnostics();
 void diagnosticDisplay();
 void voltageMonitoring();
 void errorCode(int blinkNum);
-void joystick_control();
 void getReferenceData();
-
 
 void setup() {
     //initialize SD card Diagnostics
     //initializeSDCard();
     //ddata.flush();
-    
-    //Initialize Servo PWM
-    //servoL.attach(9);   //top fin servo
-    //servoR.attach(6);  //starboard fin servo
-    //servoU.attach(5);   //bottom fin servo 
-    //servoD.attach(3);   //port fin servo 
-    //ddata.println("ServoPWM: GO");
-    //ddata.flush();
-    
-    //set up adc read pins
-    //initializeAnalogJoystick();
-    //ddata.flush();
-    
-    // Initialize Input Switches
+
+        // Initialize Input Switches
     pinMode(7, INPUT_PULLUP); //Calibrate
     pinMode(8, INPUT_PULLUP); //Autopilot Engage
 
@@ -151,7 +115,9 @@ void setup() {
     initializeSF();
     //initializeSF_SD();
 
-    
+    if (!IMU2.begin()) { Serial.println(F("Failed to initialize IMU!")); while (1);  }
+    IMU2.setMagnetODR(8);
+    IMU2.setMagnetFS(0);
 
     // initialize i2c bus
     Wire.begin();
@@ -162,8 +128,7 @@ void setup() {
     //ddata = SD.open(file, FILE_WRITE);
 
     autopilot_on = false;
-
-
+    
     MODE = 'o';
 //    MODE= 'v';
 //    MODE = 'a';
@@ -196,11 +161,6 @@ void loop() {
     pitch = IMU.pitchDegrees();
     yaw = IMU.yawDegrees();
     temperature = IMU.readTempC();
-    
-    current_roll = roll * (3.1415926 / 180);
-    integral_sum = integral_sum + (current_roll * deltat);
-    roll_rate = gy * (3.1415926 / 180);
-
 
     if (digitalRead(8)) { //If autopilot is disabled
       autopilot_output = 0;
@@ -244,14 +204,10 @@ void loop() {
       }
   }
 
-  //joystick_control();
-            
-  //servoL.write(x_pos + autopilot_output);
-  //servoR.write(180 - x_pos + autopilot_output);
-  //servoU.write(y_pos + autopilot_output);
-  //servoD.write(180 - y_pos + autopilot_output);
-
   getReferenceData();
+
+  //int myTime = (int) millis();
+  //unsigned long serialCheck = (unsigned long) ((millis() % 250);
 
   // Remove this block eventually
   //clk++;
@@ -296,7 +252,7 @@ void initializeSF() {
   
     if (!IMU.start())
     {
-      //Serial.println("Failed to initialize IMU!");
+    //  Serial.println("Failed to initialize IMU!");
       while (1);
     }
     //Serial.println("Perform gyro and accel self test.");
@@ -307,11 +263,11 @@ void initializeSF() {
     }
     else
     {  
-      //Serial.println("LSM9DS1 is online and passed self test...");
-  
-      //Serial.print("accel sensitivity is "); Serial.print(IMU.accelerationSensitivity()); Serial.println(" LSB/mg");
-      //Serial.print("gyro sensitivity is "); Serial.print(IMU.gyroscopeSensitivity()); Serial.println(" LSB/mdps");
-      //Serial.print("mag sensitivity is "); Serial.print(IMU.magnometerSensitivity()); Serial.println(" LSB/mGauss");
+//      Serial.println("LSM9DS1 is online and passed self test...");
+//  
+//      Serial.print("accel sensitivity is "); Serial.print(IMU.accelerationSensitivity()); Serial.println(" LSB/mg");
+//      Serial.print("gyro sensitivity is "); Serial.print(IMU.gyroscopeSensitivity()); Serial.println(" LSB/mdps");
+//      Serial.print("mag sensitivity is "); Serial.print(IMU.magnometerSensitivity()); Serial.println(" LSB/mGauss");
       calibrateIMU();
     }
 }
@@ -368,37 +324,6 @@ void initializeSDCard() {
   }
 }
 
-void initializeAnalogJoystick() {
-    joystick_x_90 = analogRead(A1);
-    joystick_y_90 = analogRead(A2);
-    
-    if ((joystick_x_90 < 700) && (joystick_x_90 > 300)) {
-      ddata.print("Joystick_X = ");
-      ddata.print(joystick_x_90);
-      ddata.println(" : GO");
-    } else {
-      ddata.print("Joystick_X = ");
-      ddata.print(joystick_x_90);
-      ddata.println(" : *** NO GO ***");
-    }
-    
-    if ((joystick_y_90 < 700) && (joystick_y_90 > 300)) {
-      ddata.print("Joystick_Y = ");
-      ddata.print(joystick_y_90);
-      ddata.println(" : GO");
-    } else {
-      ddata.print("Joystick_Y = ");
-      ddata.print(joystick_y_90);
-      ddata.println(" : *** NO GO ***");
-    }
-    
-    roll = 0;
-    x = 0;
-    y = 0;
-    z = 0;
-}
-
-
 void calibrateIMU() {
 
     //Print to Display
@@ -411,21 +336,21 @@ void calibrateIMU() {
     u8g2.print(F("ACTIVE")); 
     } while ( u8g2.nextPage() );
    
-    Serial.println("Calibrate gyro and accel");
+//    Serial.println("Calibrate gyro and accel");
     IMU.calibrateAccelGyro(); // Calibrate gyro and accelerometers, load biases in bias registers
 
     float* accelBias = IMU.getAccelBias();
     float* gyroBias = IMU.getGyroBias();
 
-    Serial.println("accel biases (mg)"); Serial.println(1000.*accelBias[0]); Serial.println(1000.*accelBias[1]); Serial.println(1000.*accelBias[2]);
-    Serial.println("gyro biases (dps)"); Serial.println(gyroBias[0]); Serial.println(gyroBias[1]); Serial.println(gyroBias[2]);
+//    Serial.println("accel biases (mg)"); Serial.println(1000.*accelBias[0]); Serial.println(1000.*accelBias[1]); Serial.println(1000.*accelBias[2]);
+//    Serial.println("gyro biases (dps)"); Serial.println(gyroBias[0]); Serial.println(gyroBias[1]); Serial.println(gyroBias[2]);
 
     IMU.calibrateMag();
     float* magBias = IMU.getMagBias();
-    Serial.println("mag biases (mG)"); Serial.println(1000.*magBias[0]); Serial.println(1000.*magBias[1]); Serial.println(1000.*magBias[2]); 
+    //Serial.println("mag biases (mG)"); Serial.println(1000.*magBias[0]); Serial.println(1000.*magBias[1]); Serial.println(1000.*magBias[2]); 
 
     IMU.initLSM9DS1(); 
-    Serial.println("LSM9DS1 initialized for active data mode...."); // Initialize device for active mode read of acclerometer, gyroscope, and temperature
+//    Serial.println("LSM9DS1 initialized for active data mode...."); // Initialize device for active mode read of acclerometer, gyroscope, and temperature
 
 //    Serial.println("Assumption is data is in the following format:");
 //    Serial.println("uptime (milliseconds), roll (degrees), pitch (degrees), yaw (degrees), gyrotemperatureC (Celcius)");
@@ -434,6 +359,7 @@ void calibrateIMU() {
     integral_sum = 0.0;
     deltat = IMU.updateDeltat(); //this have to be done before calling the fusion update
 }
+
 
 void calibrateIMU_SD() {
     ddata.println("Calibrating IMU");
@@ -511,12 +437,27 @@ void updateIMU() {
     if (IMU.gyroscopeReady()) {  // check if new gyro data is ready  
       IMU.readGyro(gx, gy, gz);
     }
-  
+
     if (IMU.magnometerReady()) {  // check if new mag data is ready  
       IMU.readMag(mx, my, mz);
     }
+    
+//    if (IMU2.magnetAvailable()) {
+//      IMU2.readRawMagnet(mx_raw, my_raw, mz_raw);  
+//    }
+//    
+//    mx_off = (mx_raw * 1000) - 824196291.694735;
+//    my_off = (my_raw * 1000) - 921.590200;
+//    mz_off = (mz_raw * 1000) + 25182.738028;
+//
+//    mx = 0.000064*mx_off; // + 0.000000*my_off + 0.000000*mz_off;
+//    my = 0.027046*my_off;
+//    mz = 0.027046*mz_off;
   
     deltat = IMU.updateDeltat(); //this have to be done before calling the fusion update
+    // Mag units in nT, need to be in mG
+    IMU.MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, -mx*0.01, -my*0.01, mz*0.01, deltat);
+
     IMU.MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, -mx, -my, mz, deltat);
 
     
@@ -570,28 +511,28 @@ void serialDiagnostics() {
   Serial.println(mz_r);
  } else if (MODE == 'o') {
   Serial.print(millis());
-  
-  //Only roll (w/rigid body dynamics):
+  // Roll only test (rigid body)
   Serial.print("      ");
-  Serial.print(roll_r);
-  Serial.print(" - ");
-  Serial.print(roll);
-  Serial.print(" = ");
-  Serial.println(roll_r - roll);
-
-  /*
-  Serial.print("  ");
   Serial.print(-1 * roll);
   Serial.print("      ");
   Serial.print(-1 * roll_r);
   Serial.print("      ");
-  Serial.print(-1 * pitch);
-  Serial.print("      ");
-  Serial.print(-1 * pitch_r);
-  Serial.print("      "); 
-  Serial.print(-1 * yaw);
-  Serial.print("      ");
-  Serial.println(-1 * yaw_r); */
+  Serial.print(roll_r - roll);
+
+  // RPY test
+//  Serial.print("      ");
+//  Serial.print(-1 * roll);
+//  Serial.print("      ");
+//  Serial.print(-1 * roll_r);
+//  Serial.print("      ");
+//  Serial.print(-1 * pitch);
+//  Serial.print("      ");
+//  Serial.print(-1 * pitch_r);
+//  Serial.print("      "); 
+//  Serial.print(-1 * yaw);
+//  Serial.print("      ");
+//  Serial.print(-1 * yaw_r);
+  Serial.println();
  } else {
   // print nothing (stop data output)
  }
@@ -765,32 +706,9 @@ void errorCode(int blinkNum) {
       digitalWrite(LED_BUILTIN, LOW);
       delay(150);                
     }
-    delay(1000);
-    
+    delay(1000);   
 }
 
-void joystick_control() {
-    //Record and average 10 values of joystick control
-    x_pos = 0;
-    y_pos = 0; 
-    for (int i = 0; i < 10; i++) {
-      x_joy = (analogRead(A1));
-      y_joy = (analogRead(A2));
-      if ((x_joy > joystick_x_90 + 70) || (x_joy < joystick_x_90 - 70)) {
-        x_pos = x_pos + ((x_joy*900)/joystick_x_90);
-      } else { 
-        x_pos = x_pos + (900);
-      }
-
-      if ((y_joy > joystick_y_90 + 70) || (y_joy < joystick_y_90 - 70)) {
-        y_pos = y_pos + ((y_joy*900)/joystick_y_90);
-      } else { 
-        y_pos = y_pos + (900);
-      }
-    }
-    x_pos = (((x_pos/100) - 90) * JOYSTICK_SENSITIVITY) + 90;
-    y_pos = (((y_pos/100) - 90) * JOYSTICK_SENSITIVITY) + 90;
-}
 
 void getReferenceData() {
   Wire.beginTransmission(8);
@@ -815,6 +733,8 @@ void getReferenceData() {
       I2C_readAnything(roll_r);
       I2C_readAnything(pitch_r);
       I2C_readAnything(yaw_r);  
+    } else {
+      // do nothing, stop collecting data 
     }
   }
 }

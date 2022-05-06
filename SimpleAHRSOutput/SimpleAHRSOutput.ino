@@ -79,9 +79,9 @@ void setup()
     Serial.println("accel biases (mg)"); Serial.println(1000.*accelBias[0]); Serial.println(1000.*accelBias[1]); Serial.println(1000.*accelBias[2]);
     Serial.println("gyro biases (dps)"); Serial.println(gyroBias[0]); Serial.println(gyroBias[1]); Serial.println(gyroBias[2]);
 
-    //IMU.calibrateMag();
-    //float* magBias = IMU.getMagBias();
-    //Serial.println("mag biases (mG)"); Serial.println(1000.*magBias[0]); Serial.println(1000.*magBias[1]); Serial.println(1000.*magBias[2]); 
+//    IMU.calibrateMag();
+//    float* magBias = IMU.getMagBias();
+//    Serial.println("mag biases (mG)"); Serial.println(1000.*magBias[0]); Serial.println(1000.*magBias[1]); Serial.println(1000.*magBias[2]); 
 
     IMU.initLSM9DS1(); 
     Serial.println("LSM9DS1 initialized for active data mode...."); // Initialize device for active mode read of acclerometer, gyroscope, and temperature
@@ -100,27 +100,38 @@ void loop() {
   if (IMU.gyroscopeReady()) {  // check if new gyro data is ready  
     IMU.readGyro(gx, gy, gz);
   }
-/*
-  if (IMU.magnometerReady()) {  // check if new mag data is ready  
-    IMU.readMag(mx, my, mz);
-  } */
+
+//  if (IMU.magnometerReady()) {  // check if new mag data is ready  
+//    IMU.readMag(mx, my, mz);
+//  }
 
   if (IMU2.magnetAvailable()) {
     IMU2.readRawMagnet(mx_raw, my_raw, mz_raw);  
-  }
+  } 
+//
+//  // MAG4 
+//  mx_off = (mx_raw * 1000) + 5592.424495;
+//  my_off = (my_raw * 1000) - 9392.597321;
+//  mz_off = (mz_raw * 1000) + 24054.460811;
+//
+//  mx = 0.928366*mx_off + 0.030235*my_off - 0.023291*mz_off;
+//  my = 0.030235*mx_off + 0.984991*my_off + 0.007333*mz_off;
+//  mz = -0.023291*mx_off + 0.007333*my_off + 0.911193*mz_off;
 
-  mx_off = (mx_raw * 1000) + 5592.424495;
-  my_off = (my_raw * 1000) - 9392.597321;
-  mz_off = (mz_raw * 1000) + 24054.460811;
+  // MAG_RAW8
+  mx_off = (mx_raw * 1000) - 6884.941836;
+  my_off = (my_raw * 1000) - 24358.428846;
+  mz_off = (mz_raw * 1000) + 28659.439568;
 
-  mx = 0.928366*mx_off + 0.030235*my_off - 0.023291*mz_off;
-  my = 0.030235*mx_off + 0.984991*my_off + 0.007333*mz_off;
-  mz = -0.023291*mx_off + 0.007333*my_off + 0.911193*mz_off;
+  mx = 1.099547*mx_off + 0.047500*my_off - 0.119563*mz_off;
+  my = 0.047500*mx_off + 1.139382*my_off - 0.006013*mz_off;
+  mz = -0.119563*mx_off - 0.006013*my_off + 1.152146*mz_off;
 
   deltat = IMU.updateDeltat(); //this have to be done before calling the fusion update
   
   // Mag units in nT, need to be in mG
   IMU.MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, -mx*0.01, -my*0.01, mz*0.01, deltat);
+//  IMU.MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, -mx, -my, mz, deltat);
 
   roll = IMU.rollDegrees();    //you could also use rollRadians()
   pitch = IMU.pitchDegrees();
@@ -135,7 +146,8 @@ void loop() {
       Serial.print("        ");
       Serial.print(-1 * pitch);
       Serial.print("        "); 
-      Serial.println(-1 * yaw);
+      Serial.print(-1 * yaw);
+      Serial.println();
       clk = 0;
     } else {
       //do nothing, stop printing data  

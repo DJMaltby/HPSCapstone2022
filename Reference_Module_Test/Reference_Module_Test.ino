@@ -105,6 +105,8 @@ void requestEvent() {
     I2C_writeAnything(roll);
     I2C_writeAnything(pitch);
     I2C_writeAnything(yaw);
+  } else {
+    // do nothing, stop data collection    
   }
   /*
   I2C_writeAnything(gx);

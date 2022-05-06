@@ -1,5 +1,3 @@
-
-
 #include <Servo.h>
 #include <AHRS_Nano33BLE_LSM9DS1.h> 
 #include <Arduino.h>
@@ -8,6 +6,8 @@
 #ifdef U8X8_HAVE_HW_I2C
 #include <Wire.h>
 #endif
+
+#include <I2C_Anything.h>
 
 #include <SPI.h>
 #include <SD.h>
@@ -660,4 +660,4 @@ void joystick_control() {
     }
     x_pos = (((x_pos/100) - 90) * JOYSTICK_SENSITIVITY) + 90;
     y_pos = (((y_pos/100) - 90) * JOYSTICK_SENSITIVITY) + 90;
-} 
+}
